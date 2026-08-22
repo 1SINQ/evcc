@@ -27,6 +27,15 @@ params:
     description:
       de: Basis-Topic des OneKey-Geräts
       en: Base topic of the OneKey device
+  - name: timeout
+    default: 90s
+    help:
+      de: |
+        Das Gerät publisht bei Änderung und mindestens alle 30 Sekunden; die
+        Vorbelegung entspricht drei ausgelassenen Meldungen.
+      en: |
+        The device publishes on change and at least every 30 seconds; the default
+        corresponds to three missed updates.
 render: |
   type: sgready
   setmode:
@@ -43,24 +52,19 @@ render: |
     source: mqtt
     {{- include "mqtt" . | indent 2 }}
     topic: {{ .topic }}/wp/sgmode
-    timeout: 90s
   power:
     source: mqtt
     {{- include "mqtt" . | indent 2 }}
     topic: {{ .topic }}/wp/power
-    timeout: 90s
   energy:
     source: mqtt
     {{- include "mqtt" . | indent 2 }}
     topic: {{ .topic }}/wp/energy
-    timeout: 90s
   temp:
     source: mqtt
     {{- include "mqtt" . | indent 2 }}
     topic: {{ .topic }}/wp/temp
-    timeout: 90s
   limittemp:
     source: mqtt
     {{- include "mqtt" . | indent 2 }}
     topic: {{ .topic }}/wp/limittemp
-    timeout: 90s
