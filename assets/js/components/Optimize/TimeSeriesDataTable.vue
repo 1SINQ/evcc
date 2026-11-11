@@ -269,7 +269,8 @@ export default defineComponent({
 		demandSourceSuffix(detail: DemandDetail): string {
 			const source = demandSource(detail);
 			if (!source) return "";
-			return ` · ${this.$t(`config.loadpoint.demandPredictor.${source}.label`)}`;
+			const key = `config.loadpoint.demandPredictor.${source}.label`;
+			return ` · ${this.$te(key) ? this.$t(key) : source}`;
 		},
 		powerRow(label: string, whValues: number[], color: string, opts: Partial<Row> = {}): Row {
 			const dt = this.evopt.req.time_series.dt;
