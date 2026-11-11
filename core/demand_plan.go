@@ -8,10 +8,11 @@ import (
 	"github.com/evcc-io/evcc/tariff"
 )
 
-// planEnergy converts a demand plan (W) into energy in kWh for n 15min slots starting at start.
+// demandPlanEnergy converts a demand plan (W) into energy in kWh for n 15min slots starting at start.
+// Each slot takes the rate valid at its start, finer grained rates are sampled, not averaged.
 // It returns the energies and the number of slots covered by the plan, contiguous from slot 0.
 // Coverage ends at the first slot without a rate or with an invalid (non-finite or negative) value.
-func planEnergy(rr api.Rates, start time.Time, n int) ([]float64, int) {
+func demandPlanEnergy(rr api.Rates, start time.Time, n int) ([]float64, int) {
 	res := make([]float64, n)
 
 	for i := range n {
@@ -28,9 +29,9 @@ func planEnergy(rr api.Rates, start time.Time, n int) ([]float64, int) {
 
 // demandPlanProfile returns the demand plan of a heating loadpoint in kWh for minLen slots
 // starting at the current slot and the number of covered slots. It is only available if
-// the plan predictor is active and the charger provides a demand plan.
+// the schedule predictor is active and the charger provides a demand plan.
 func (lp *Loadpoint) demandPlanProfile(minLen int) ([]float64, int) {
-	if lp.activeDemandPredictor() != "plan" {
+	if lp.activeDemandPredictor() != "schedule" {
 		return nil, 0
 	}
 
@@ -45,7 +46,7 @@ func (lp *Loadpoint) demandPlanProfile(minLen int) ([]float64, int) {
 		return nil, 0
 	}
 
-	res, covered := planEnergy(rr, time.Now().Truncate(tariff.SlotDuration), minLen)
+	res, covered := demandPlanEnergy(rr, lp.clock.Now().Truncate(tariff.SlotDuration), minLen)
 	if covered == 0 {
 		lp.log.DEBUG.Println("demand plan: no current slots")
 	}

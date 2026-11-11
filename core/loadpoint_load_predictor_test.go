@@ -37,9 +37,9 @@ func TestDefaultDemandPredictor(t *testing.T) {
 		{"none", &featureCharger{features: []api.Feature{api.Heating}}, "daily", "daily"},
 		{"weekday", &featureCharger{features: []api.Feature{api.Heating, api.DemandWeekday}}, "weekday", "weekday"},
 		{"temperature", &featureCharger{features: []api.Feature{api.Heating, api.DemandTemperature}}, "temperature", "temperature"},
-		{"plan", newPlanCharger(plan, api.Heating), "plan", "daily"},
-		{"plan weekday", newPlanCharger(plan, api.Heating, api.DemandWeekday), "plan", "weekday"},
-		{"plan temperature", newPlanCharger(plan, api.Heating, api.DemandTemperature), "plan", "temperature"},
+		{"schedule", newPlanCharger(plan, api.Heating), "schedule", "daily"},
+		{"schedule weekday", newPlanCharger(plan, api.Heating, api.DemandWeekday), "schedule", "weekday"},
+		{"schedule temperature", newPlanCharger(plan, api.Heating, api.DemandTemperature), "schedule", "temperature"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.predictor, DefaultDemandPredictor(tc.charger))
@@ -51,11 +51,11 @@ func TestDefaultDemandPredictor(t *testing.T) {
 func TestSetDemandPredictor(t *testing.T) {
 	lp := NewLoadpoint(util.NewLogger("foo"), settings.NewDatabaseSettingsAdapter("foo"))
 
-	lp.SetDemandPredictor("plan")
-	assert.Equal(t, "plan", lp.GetDemandPredictor())
+	lp.SetDemandPredictor("schedule")
+	assert.Equal(t, "schedule", lp.GetDemandPredictor())
 
 	lp.SetDemandPredictor("bogus")
-	assert.Equal(t, "plan", lp.GetDemandPredictor(), "unknown predictor is ignored")
+	assert.Equal(t, "schedule", lp.GetDemandPredictor(), "unknown predictor is ignored")
 
 	lp.SetDemandPredictor("")
 	assert.Equal(t, "", lp.GetDemandPredictor())

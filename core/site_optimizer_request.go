@@ -44,7 +44,7 @@ const (
 type demandDetail struct {
 	Type   demandType `json:"type"`
 	Title  string     `json:"title,omitempty"`
-	Source string     `json:"source,omitempty"` // heating: "plan" or the history predictor
+	Source string     `json:"source,omitempty"` // heating: "schedule" or the history predictor
 	Values []float32  `json:"values"`
 }
 

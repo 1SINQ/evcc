@@ -33,7 +33,7 @@ func (site *Site) homeProfile(minLen int) ([]float64, error) {
 type heatingDemand struct {
 	lp     loadpoint.API
 	values []float64
-	source string // "plan" if any slot is taken from the device plan, otherwise the history predictor
+	source string // "schedule" if any slot is taken from the device schedule, otherwise the history predictor
 }
 
 // addHeatingDemand adds the forecast demand of all heating loadpoints to the home load
@@ -84,7 +84,7 @@ func (site *Site) addHeatingDemand(gt []float64, minLen int) []heatingDemand {
 				p = make([]float64, minLen)
 			}
 			copy(p, plan[:covered])
-			source = "plan"
+			source = "schedule"
 			site.log.DEBUG.Printf("heating demand: added device plan for %s (%d of %d slots)", lp.GetTitle(), covered, len(p))
 		}
 

@@ -10,13 +10,13 @@ import (
 	"github.com/jinzhu/now"
 )
 
-var demandPredictors = []string{"daily", "weekday", "temperature", "plan"}
+var demandPredictors = []string{"daily", "weekday", "temperature", "schedule"}
 
-// DefaultDemandPredictor returns the demand predictor of a heating charger: "plan" if the
+// DefaultDemandPredictor returns the demand predictor of a heating charger: "schedule" if the
 // device publishes its own demand plan, otherwise the predictor declared via its predictor feature
 func DefaultDemandPredictor(charger any) string {
 	if _, ok := api.Cap[api.DemandPlanner](charger); ok {
-		return "plan"
+		return "schedule"
 	}
 	return fallbackDemandPredictor(charger)
 }
@@ -41,7 +41,7 @@ func (lp *Loadpoint) GetDemandPredictor() string {
 	return lp.predictor
 }
 
-// SetDemandPredictor sets the demand predictor ("daily", "weekday", "temperature", "plan" or empty for the charger default), other values are ignored
+// SetDemandPredictor sets the demand predictor ("daily", "weekday", "temperature", "schedule" or empty for the charger default), other values are ignored
 func (lp *Loadpoint) SetDemandPredictor(predictor string) {
 	if predictor != "" && !slices.Contains(demandPredictors, predictor) {
 		return
@@ -67,9 +67,9 @@ func (lp *Loadpoint) activeDemandPredictor() string {
 }
 
 // historyDemandPredictor returns the active predictor for the history based profile,
-// "plan" falls back to the charger's feature default
+// "schedule" falls back to the charger's feature default
 func (lp *Loadpoint) historyDemandPredictor() string {
-	if p := lp.activeDemandPredictor(); p != "plan" {
+	if p := lp.activeDemandPredictor(); p != "schedule" {
 		return p
 	}
 	return fallbackDemandPredictor(lp.charger)

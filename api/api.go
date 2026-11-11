@@ -225,7 +225,9 @@ type Tariff interface {
 }
 
 // DemandPlanner is implemented by heating devices that publish their own
-// consumption plan. Rates carry the expected electrical power in W.
+// consumption plan. Rates must be sorted by start and carry the expected
+// electrical power in W. DemandPlan is called while building the optimizer
+// request and must return quickly, e.g. from a cached value.
 type DemandPlanner interface {
 	DemandPlan() (Rates, error)
 }
