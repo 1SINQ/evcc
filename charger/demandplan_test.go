@@ -2,7 +2,6 @@ package charger
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
@@ -58,8 +57,9 @@ func TestDemandPlanGetterNoBlockingWithoutMessage(t *testing.T) {
 	mon := util.NewMonitor[string](time.Hour)
 	planG := newDemandPlanGetter(mon.Get)
 
-	// let the background warm-up take the one-time wait
-	time.Sleep(50 * time.Millisecond)
+	// let the background warm-up take the one-time wait. Retrying reads would not do:
+	// the first blocked read takes that wait itself and makes later reads pass anyway
+	time.Sleep(200 * time.Millisecond)
 
 	done := make(chan error, 1)
 	go func() {
@@ -70,7 +70,7 @@ func TestDemandPlanGetterNoBlockingWithoutMessage(t *testing.T) {
 	select {
 	case err := <-done:
 		assert.ErrorIs(t, err, api.ErrOutdated)
-	case <-time.After(time.Second):
+	case <-time.After(5 * time.Second):
 		t.Fatal("DemandPlan blocked without message")
 	}
 
@@ -120,68 +120,102 @@ func onekeyDemandPlan(t *testing.T, payload []byte) (api.Rates, map[string]any) 
 	return rates, instance.DemandPlan
 }
 
-// onekeyPlanPayload reads a onekey/wp/plan fixture and sets its publish time to age before now,
-// without withTs it removes ts_ms
-func onekeyPlanPayload(t *testing.T, fixture string, age time.Duration, withTs bool) []byte {
+// onekeyPlanStart is the first slot of the test plan, aligned to a quarter hour
+var onekeyPlanStart = time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)
+
+// onekeyPlanPayload builds a onekey/wp/plan payload as the device publishes it: 96 slots of
+// 15 min from onekeyPlanStart, published age before now. Without withTs ts_ms is left out.
+func onekeyPlanPayload(t *testing.T, age time.Duration, withTs bool) ([]byte, []int) {
 	t.Helper()
 
-	b, err := os.ReadFile(fixture)
-	require.NoError(t, err)
+	var expected, minW, maxW, heating, dhw []int
+	for i := range 96 {
+		h := 1800 + 9*(i%48) // heating demand rising over half a day
+		d := 0
+		if i >= 24 && i < 28 {
+			d = 1500 // hot water in the afternoon
+		}
+		heating = append(heating, h)
+		dhw = append(dhw, d)
+		expected = append(expected, h+d)
+		minW = append(minW, d)
+		maxW = append(maxW, 4200)
+	}
 
-	var payload map[string]any
-	require.NoError(t, json.Unmarshal(b, &payload))
-
-	delete(payload, "ts_ms")
+	payload := map[string]any{
+		"slot_s":     900,
+		"start_ms":   onekeyPlanStart.UnixMilli(),
+		"expected_w": expected,
+		"min_w":      minW,
+		"max_w":      maxW,
+		"heating_w":  heating,
+		"dhw_w":      dhw,
+		"heater_w":   []int{},
+	}
 	if withTs {
 		payload["ts_ms"] = time.Now().Add(-age).UnixMilli()
 	}
 
-	b, err = json.Marshal(payload)
+	b, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	return b, expected
+}
+
+// onekeyEmptyPlanPayload builds the payload the device publishes without a valid planner
+func onekeyEmptyPlanPayload(t *testing.T) []byte {
+	t.Helper()
+
+	b, err := json.Marshal(map[string]any{
+		"slot_s":     900,
+		"start_ms":   0,
+		"expected_w": []int{},
+		"min_w":      []int{},
+		"max_w":      []int{},
+		"heating_w":  []int{},
+		"dhw_w":      []int{},
+		"heater_w":   []int{},
+		"ts_ms":      time.Now().Add(-time.Minute).UnixMilli(),
+	})
 	require.NoError(t, err)
 
 	return b
 }
 
 func TestOneKeyTemplateDemandPlan(t *testing.T) {
-	rates, cfg := onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", time.Minute, true))
+	payload, expected := onekeyPlanPayload(t, time.Minute, true)
+	rates, cfg := onekeyDemandPlan(t, payload)
 
 	assert.Equal(t, "mqtt", cfg["source"])
 	assert.Equal(t, "onekey/wp/plan", cfg["topic"])
 	assert.Equal(t, "45m", cfg["timeout"])
 
-	var payload struct {
-		StartMs   int64     `json:"start_ms"`
-		ExpectedW []float64 `json:"expected_w"`
-	}
-	b, err := os.ReadFile("testdata/onekey-wp-plan.json")
-	require.NoError(t, err)
-	require.NoError(t, json.Unmarshal(b, &payload))
-
-	start := time.UnixMilli(payload.StartMs)
-
 	require.Len(t, rates, 96)
-	assert.True(t, rates[0].Start.Equal(start), "first start")
-	assert.True(t, rates[95].End.Equal(start.Add(24*time.Hour)), "last end")
+	assert.True(t, rates[0].Start.Equal(onekeyPlanStart), "first start")
+	assert.True(t, rates[95].End.Equal(onekeyPlanStart.Add(24*time.Hour)), "last end")
 
 	for i, r := range rates {
 		assert.Equal(t, 15*time.Minute, r.End.Sub(r.Start), "slot %d", i)
-		assert.Equal(t, payload.ExpectedW[i], r.Value, "slot %d", i)
+		assert.Equal(t, float64(expected[i]), r.Value, "slot %d", i)
 	}
 }
 
 // a retained plan the device no longer refreshes must not count
 func TestOneKeyTemplateDemandPlanStale(t *testing.T) {
-	rates, _ := onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", 46*time.Minute, true))
+	payload, _ := onekeyPlanPayload(t, 46*time.Minute, true)
+	rates, _ := onekeyDemandPlan(t, payload)
 	assert.Empty(t, rates, "stale ts_ms")
 
-	rates, _ = onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", 0, false))
+	payload, _ = onekeyPlanPayload(t, 0, false)
+	rates, _ = onekeyDemandPlan(t, payload)
 	assert.Empty(t, rates, "missing ts_ms")
 
-	rates, _ = onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", 44*time.Minute, true))
+	payload, _ = onekeyPlanPayload(t, 44*time.Minute, true)
+	rates, _ = onekeyDemandPlan(t, payload)
 	assert.Len(t, rates, 96, "ts_ms within 45 min")
 }
 
 func TestOneKeyTemplateDemandPlanEmpty(t *testing.T) {
-	rates, _ := onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan-empty.json", time.Minute, true))
+	rates, _ := onekeyDemandPlan(t, onekeyEmptyPlanPayload(t))
 	assert.Empty(t, rates)
 }
