@@ -9,6 +9,7 @@ import {
   demandColors,
   evopt,
   heatPump,
+  heatPumpSchedule,
   heatingRod,
   home,
   timestamps,
@@ -57,4 +58,12 @@ HeatingAndUnmodelled.args = {
   ...base,
   evopt: evopt([home, carport, heatPump]),
   demandDetails: [home, carport, heatPump],
+};
+
+// heat pump forecast taken from the device schedule
+export const HeatingDeviceSchedule = Template.bind({});
+HeatingDeviceSchedule.args = {
+  ...base,
+  evopt: evopt([home, heatPumpSchedule, heatingRod]),
+  demandDetails: [home, heatPumpSchedule, { ...heatingRod, source: "daily" }],
 };

@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import { dayBoundarySeries, isMidnight, slotParents, slotXAxis, splitSlots } from "./chart";
+import {
+  dayBoundarySeries,
+  demandSource,
+  isMidnight,
+  slotParents,
+  slotXAxis,
+  splitSlots,
+} from "./chart";
 
 // 15min slots starting at the given local hour
 function times(startHour: number, count: number): number[] {
@@ -46,5 +53,21 @@ describe("splitSlots", () => {
   test("shares energy evenly, power per slot unchanged", () => {
     expect(splitSlots([7, 10, 400, 100], parents)).toEqual([7, 10, 100, 100, 100, 100, 50, 50]);
     expect(splitSlots([], parents)).toEqual([]);
+  });
+});
+
+describe("demandSource", () => {
+  test("returns the source of heating profiles", () => {
+    expect(demandSource({ type: "heating", title: "HP", source: "schedule", values: [] })).toBe(
+      "schedule"
+    );
+    expect(demandSource({ type: "heating", title: "HP", source: "daily", values: [] })).toBe(
+      "daily"
+    );
+  });
+
+  test("ignores other profiles and missing sources", () => {
+    expect(demandSource({ type: "heating", title: "HP", values: [] })).toBeUndefined();
+    expect(demandSource({ type: "home", source: "schedule", values: [] })).toBeUndefined();
   });
 });

@@ -617,6 +617,8 @@ import {
 const nsPerMin = 60 * 1e9;
 
 const DEMAND_PREDICTORS: DemandPredictor[] = ["daily", "weekday", "temperature"];
+// only offered for devices that provide their own schedule
+const SCHEDULE_PREDICTOR: DemandPredictor = "schedule";
 
 const { OFF, SMART, NOW } = CHARGE_MODE;
 
@@ -695,6 +697,12 @@ export default {
 		defaultDemandPredictor(): DemandPredictor {
 			return this.chargerStatus?.demandPredictor?.value ?? "daily";
 		},
+		demandPredictors(): DemandPredictor[] {
+			const offerSchedule =
+				this.defaultDemandPredictor === SCHEDULE_PREDICTOR ||
+				this.values.demandPredictor === SCHEDULE_PREDICTOR;
+			return offerSchedule ? [SCHEDULE_PREDICTOR, ...DEMAND_PREDICTORS] : DEMAND_PREDICTORS;
+		},
 		demandPredictorGroups() {
 			const t = (key: string) => this.$t(`config.loadpoint.demandPredictor.${key}`);
 			const label = (profile: DemandPredictor) => t(`${profile}.label`);
@@ -705,7 +713,7 @@ export default {
 				},
 				{
 					label: t("profilesGroup"),
-					options: DEMAND_PREDICTORS.map((value) => ({ value, label: label(value) })),
+					options: this.demandPredictors.map((value) => ({ value, label: label(value) })),
 				},
 			];
 		},

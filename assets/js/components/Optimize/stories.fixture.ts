@@ -28,6 +28,13 @@ export const heatPump: DemandDetail = {
   title: "Wärmepumpe",
   values: wh((h) => 0.5 + 1.2 * Math.exp(-(h - START_H) / 3)),
 };
+// heat pump following its own schedule, hot water in the early evening
+export const heatPumpSchedule: DemandDetail = {
+  type: "heating",
+  title: "Wärmepumpe",
+  source: "schedule",
+  values: wh((h) => 0.6 + (h >= 17 && h < 18 ? 1.5 : 0)),
+};
 // heating rod boosts hot water twice a day
 export const heatingRod: DemandDetail = {
   type: "heating",

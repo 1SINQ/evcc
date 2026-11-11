@@ -571,6 +571,10 @@
         "noTempTariff": "Erfordert eine Temperaturvorhersage.",
         "noTempTariffLink": "Vorhersage hinzufügen",
         "profilesGroup": "Profile",
+        "schedule": {
+          "description": "Fahrplan, den das Gerät für die nächsten Stunden meldet. Stunden ohne Fahrplan kommen aus dem Verlauf.",
+          "label": "Fahrplan des Geräts"
+        },
         "temperature": {
           "description": "Verbrauch bei ähnlicher Außentemperatur. Für Raumheizung, z. B. Wärmepumpen.",
           "label": "Temperatur"

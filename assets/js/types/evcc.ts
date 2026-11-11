@@ -548,7 +548,7 @@ export interface LoadpointThreshold {
 }
 
 /** Demand forecast strategy of a heating loadpoint. */
-export type DemandPredictor = "daily" | "weekday" | "temperature";
+export type DemandPredictor = "daily" | "weekday" | "temperature" | "schedule";
 
 export interface ConfigLoadpoint {
   id?: number;
@@ -1636,6 +1636,7 @@ export interface BatteryDetail {
 export interface DemandDetail {
   type: "home" | "heating" | "unmodelled"; // Origin of the profile
   title?: string; // Loadpoint title, unset for the base load
+  source?: DemandPredictor; // Heating: "schedule" if the device schedule is used, otherwise the history predictor
   values: number[]; // Energy per slot (Wh)
 }
 

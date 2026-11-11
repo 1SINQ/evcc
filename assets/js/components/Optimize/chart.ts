@@ -1,5 +1,5 @@
 import { boundarySeries, hoverDot, xAxisLabelStyle } from "../Forecast/echarts";
-import type { DemandDetail } from "@/types/evcc";
+import type { DemandDetail, DemandPredictor } from "@/types/evcc";
 
 export type Titled = { title?: string; name?: string };
 
@@ -7,6 +7,11 @@ export type Titled = { title?: string; name?: string };
 export function demandTitle(detail: DemandDetail, baseLoadLabel: string): string {
   if (detail.type === "home") return baseLoadLabel;
   return `${detail.title} (${detail.type})`;
+}
+
+// predictor a heating profile comes from, unset for other profiles
+export function demandSource(detail: DemandDetail): DemandPredictor | undefined {
+  return detail.type === "heating" ? detail.source : undefined;
 }
 
 // loadpoint part of a vehicle entry title: "Carport (blue e-Golf)" → "Carport"

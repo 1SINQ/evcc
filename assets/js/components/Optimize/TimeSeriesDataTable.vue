@@ -63,7 +63,7 @@
 import { defineComponent, type PropType } from "vue";
 import formatter from "@/mixins/formatter";
 import colors from "@/colors";
-import { demandTitle } from "./chart";
+import { demandSource, demandTitle } from "./chart";
 import type { CURRENCY, BatteryDetail, DemandDetail } from "@/types/evcc";
 
 export interface EvoptData {
@@ -204,7 +204,7 @@ export default defineComponent({
 			const consumption = this.$t("energy.group.consumer");
 			return this.demandDetails.map((d, i) =>
 				this.powerRow(
-					`↳ ${demandTitle(d, consumption)}`,
+					`↳ ${demandTitle(d, consumption)}${this.demandSourceSuffix(d)}`,
 					d.values,
 					this.demandColors[i] || colors.muted || "",
 					{ ref }
@@ -264,6 +264,12 @@ export default defineComponent({
 				});
 			});
 			return groups;
+		},
+		// heating profiles name their source, e.g. the device schedule
+		demandSourceSuffix(detail: DemandDetail): string {
+			const source = demandSource(detail);
+			if (!source) return "";
+			return ` · ${this.$t(`config.loadpoint.demandPredictor.${source}.label`)}`;
 		},
 		powerRow(label: string, whValues: number[], color: string, opts: Partial<Row> = {}): Row {
 			const dt = this.evopt.req.time_series.dt;

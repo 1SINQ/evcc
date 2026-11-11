@@ -571,6 +571,10 @@
         "noTempTariff": "Requires a temperature forecast.",
         "noTempTariffLink": "Add forecast",
         "profilesGroup": "Profiles",
+        "schedule": {
+          "description": "Schedule the device publishes for the coming hours. History fills the hours it does not cover.",
+          "label": "Device schedule"
+        },
         "temperature": {
           "description": "Past consumption at similar outdoor temperatures. For room heating, like heat pumps.",
           "label": "Temperature"
