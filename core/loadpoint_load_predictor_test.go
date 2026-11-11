@@ -18,8 +18,8 @@ type planCharger struct {
 
 func newPlanCharger(fn func() (api.Rates, error), features ...api.Feature) *planCharger {
 	c := &planCharger{
-		featureCharger: featureCharger{features: features},
-		Caps:           implement.New(),
+		features: features,
+		Caps:     implement.New(),
 	}
 	implement.May(c, implement.DemandPlanner(fn))
 	return c

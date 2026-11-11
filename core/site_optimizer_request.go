@@ -44,6 +44,7 @@ const (
 type demandDetail struct {
 	Type   demandType `json:"type"`
 	Title  string     `json:"title,omitempty"`
+	Source string     `json:"source,omitempty"` // heating: "plan" or the history predictor
 	Values []float32  `json:"values"`
 }
 
@@ -218,6 +219,7 @@ func (site *Site) optimizerRequest(battery []types.Measurement) (optimizer.Optim
 		details.DemandDetails = append(details.DemandDetails, demandDetail{
 			Type:   demandTypeHeating,
 			Title:  h.lp.GetTitle(),
+			Source: h.source,
 			Values: prorate(h.values, firstSlotDuration),
 		})
 	}

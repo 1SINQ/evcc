@@ -66,6 +66,15 @@ func (lp *Loadpoint) activeDemandPredictor() string {
 	return DefaultDemandPredictor(lp.charger)
 }
 
+// historyDemandPredictor returns the active predictor for the history based profile,
+// "plan" falls back to the charger's feature default
+func (lp *Loadpoint) historyDemandPredictor() string {
+	if p := lp.activeDemandPredictor(); p != "plan" {
+		return p
+	}
+	return fallbackDemandPredictor(lp.charger)
+}
+
 // demandProfile returns the heating demand profile of a heating loadpoint and whether
 // it needs to be corrected by the outdoor temperature forecast. Returns nil when unavailable.
 // For weekday predictor devices, use demandProfileWeekday instead.
@@ -74,7 +83,7 @@ func (lp *Loadpoint) demandProfile() (*[96]float64, bool) {
 		return nil, false
 	}
 
-	predictor := lp.activeDemandPredictor()
+	predictor := lp.historyDemandPredictor()
 
 	// weekday predictor profiles are assembled per-day in demandProfileWeekday
 	if predictor == "weekday" {
@@ -100,7 +109,7 @@ func (lp *Loadpoint) demandProfile() (*[96]float64, bool) {
 // demandProfileWeekday builds a minLen-slot demand forecast for a weekday predictor device
 // by fetching the correct weekday profile for each calendar day in the horizon.
 func (lp *Loadpoint) demandProfileWeekday(minLen int) []float64 {
-	if lp.chargeEnergy == nil || !lp.chargerHasFeature(api.Heating) || lp.activeDemandPredictor() != "weekday" {
+	if lp.chargeEnergy == nil || !lp.chargerHasFeature(api.Heating) || lp.historyDemandPredictor() != "weekday" {
 		return nil
 	}
 

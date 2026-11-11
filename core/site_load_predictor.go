@@ -33,6 +33,7 @@ func (site *Site) homeProfile(minLen int) ([]float64, error) {
 type heatingDemand struct {
 	lp     loadpoint.API
 	values []float64
+	source string // "plan" if any slot is taken from the device plan, otherwise the history predictor
 }
 
 // addHeatingDemand adds the forecast demand of all heating loadpoints to the home load
@@ -73,7 +74,21 @@ func (site *Site) addHeatingDemand(gt []float64, minLen int) []heatingDemand {
 		} else if wp := lp.demandProfileWeekday(minLen); wp != nil {
 			p = wp
 			site.log.DEBUG.Printf("heating demand: added weekday forecast for %s (%d slots)", lp.GetTitle(), len(p))
-		} else {
+		}
+
+		source := lp.historyDemandPredictor()
+
+		// the device plan takes precedence over the history for the slots it covers
+		if plan, covered := lp.demandPlanProfile(minLen); covered > 0 {
+			if p == nil {
+				p = make([]float64, minLen)
+			}
+			copy(p, plan[:covered])
+			source = "plan"
+			site.log.DEBUG.Printf("heating demand: added device plan for %s (%d of %d slots)", lp.GetTitle(), covered, len(p))
+		}
+
+		if p == nil {
 			continue
 		}
 
@@ -86,7 +101,7 @@ func (site *Site) addHeatingDemand(gt []float64, minLen int) []heatingDemand {
 			gt[i] += p[i]
 		}
 
-		res = append(res, heatingDemand{lp, p})
+		res = append(res, heatingDemand{lp, p, source})
 	}
 
 	return res

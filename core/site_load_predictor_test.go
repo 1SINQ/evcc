@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/core/metrics"
+	"github.com/evcc-io/evcc/core/settings"
+	"github.com/evcc-io/evcc/db"
 	"github.com/evcc-io/evcc/tariff"
 	"github.com/evcc-io/evcc/util"
 	"github.com/jinzhu/now"
@@ -143,4 +146,117 @@ func TestTileAndTrim(t *testing.T) {
 	firstSlot := int(time.Now().Truncate(tariff.SlotDuration).Sub(now.BeginningOfDay()) / tariff.SlotDuration)
 	assert.Equal(t, float64(firstSlot), res[0], "starts at the current slot")
 	assert.Equal(t, res[0], res[96], "wraps after a full day")
+}
+
+// newHeatingDemandSite returns a site with a single connected heating loadpoint whose
+// charge history is 0.1 kWh in every slot of the past days
+func newHeatingDemandSite(t *testing.T, charger api.Charger) (*Site, *Loadpoint) {
+	t.Helper()
+
+	require.NoError(t, db.NewInstance("sqlite", ":memory:"))
+	require.NoError(t, metrics.SetupSchema())
+
+	col, err := metrics.NewCollector(metrics.Loadpoint, "heater", "heater")
+	require.NoError(t, err)
+
+	var id int
+	require.NoError(t, db.Instance.Raw(`SELECT id FROM entities WHERE name = ?`, "heater").Scan(&id).Error)
+	for day := -3; day < 0; day++ {
+		base := now.BeginningOfDay().AddDate(0, 0, day)
+		for slot := range 96 {
+			ts := base.Add(time.Duration(slot) * tariff.SlotDuration)
+			require.NoError(t, db.Instance.Exec(`INSERT INTO meters (meter, ts, energy, return_energy) VALUES (?, ?, ?, 0)`, id, ts.Unix(), 0.1).Error)
+		}
+	}
+
+	lp := NewLoadpoint(util.NewLogger("foo"), settings.NewDatabaseSettingsAdapter("foo"))
+	lp.charger = charger
+	lp.chargeEnergy = col
+	lp.status = api.StatusC
+	lp.mode = api.ModeNow
+
+	site := NewSite()
+	site.log = util.NewLogger("foo")
+	site.loadpoints = []*Loadpoint{lp}
+
+	return site, lp
+}
+
+func TestAddHeatingDemandPlan(t *testing.T) {
+	const minLen = 8
+
+	start := time.Now().Truncate(tariff.SlotDuration)
+	var calls int
+	plan := func() (api.Rates, error) {
+		calls++
+		var rr api.Rates
+		for i := range 4 {
+			s := start.Add(time.Duration(i) * tariff.SlotDuration)
+			rr = append(rr, api.Rate{Start: s, End: s.Add(tariff.SlotDuration), Value: 1000})
+		}
+		return rr, nil
+	}
+
+	site, _ := newHeatingDemandSite(t, newPlanCharger(plan, api.Heating))
+
+	gt := make([]float64, minLen)
+	res := site.addHeatingDemand(gt, minLen)
+
+	require.Len(t, res, 1)
+	assert.Equal(t, "plan", res[0].source)
+	assert.InDeltaSlice(t, []float64{250, 250, 250, 250, 100, 100, 100, 100}, gt, 1e-6, "plan first, history behind")
+	assert.InDeltaSlice(t, gt, res[0].values, 1e-6)
+	assert.Equal(t, 1, calls)
+}
+
+func TestAddHeatingDemandPlanError(t *testing.T) {
+	const minLen = 8
+
+	plan := func() (api.Rates, error) { return nil, api.ErrNotAvailable }
+	site, _ := newHeatingDemandSite(t, newPlanCharger(plan, api.Heating))
+
+	gt := make([]float64, minLen)
+	res := site.addHeatingDemand(gt, minLen)
+
+	require.Len(t, res, 1)
+	assert.Equal(t, "daily", res[0].source, "history predictor without plan")
+	assert.InDeltaSlice(t, slices.Repeat([]float64{100}, minLen), gt, 1e-6)
+}
+
+func TestAddHeatingDemandPlanWithoutHistory(t *testing.T) {
+	const minLen = 8
+
+	start := time.Now().Truncate(tariff.SlotDuration)
+	plan := func() (api.Rates, error) {
+		return api.Rates{{Start: start, End: start.Add(time.Hour), Value: 2000}}, nil
+	}
+	site, _ := newHeatingDemandSite(t, newPlanCharger(plan, api.Heating))
+	require.NoError(t, db.Instance.Exec(`DELETE FROM meters`).Error)
+
+	gt := make([]float64, minLen)
+	res := site.addHeatingDemand(gt, minLen)
+
+	require.Len(t, res, 1)
+	assert.Equal(t, "plan", res[0].source)
+	assert.InDeltaSlice(t, []float64{500, 500, 500, 500, 0, 0, 0, 0}, gt, 1e-6, "plan without history")
+}
+
+func TestAddHeatingDemandHistoryPredictor(t *testing.T) {
+	const minLen = 8
+
+	var calls int
+	plan := func() (api.Rates, error) {
+		calls++
+		return nil, nil
+	}
+	site, lp := newHeatingDemandSite(t, newPlanCharger(plan, api.Heating))
+	lp.SetDemandPredictor("daily")
+
+	gt := make([]float64, minLen)
+	res := site.addHeatingDemand(gt, minLen)
+
+	require.Len(t, res, 1)
+	assert.Equal(t, "daily", res[0].source)
+	assert.InDeltaSlice(t, slices.Repeat([]float64{100}, minLen), gt, 1e-6)
+	assert.Zero(t, calls, "plan is not requested for history predictors")
 }
