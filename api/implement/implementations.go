@@ -211,6 +211,21 @@ func (i *iCurtailer) SetCurtailPercent(p0 int) error {
 	return i.curtailer1(p0)
 }
 
+func DemandPlanner(demandPlanner0 func() (api.Rates, error)) api.DemandPlanner {
+	if demandPlanner0 == nil {
+		return nil
+	}
+	return &iDemandPlanner{demandPlanner0}
+}
+
+type iDemandPlanner struct {
+	demandPlanner0 func() (api.Rates, error)
+}
+
+func (i *iDemandPlanner) DemandPlan() (api.Rates, error) {
+	return i.demandPlanner0()
+}
+
 func Dimmer(dimmer0 func(bool) error, dimmer1 func() (bool, error)) api.Dimmer {
 	if dimmer0 == nil || dimmer1 == nil {
 		return nil

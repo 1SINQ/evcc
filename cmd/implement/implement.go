@@ -75,6 +75,7 @@ func generate(out io.Writer) error {
 		reflect.TypeFor[api.CurrentGetter](),
 		reflect.TypeFor[api.CurrentLimiter](),
 		reflect.TypeFor[api.Curtailer](),
+		reflect.TypeFor[api.DemandPlanner](),
 		reflect.TypeFor[api.Dimmer](),
 		reflect.TypeFor[api.Identifier](),
 		reflect.TypeFor[api.MaxACPowerGetter](),

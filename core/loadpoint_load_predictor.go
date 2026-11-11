@@ -10,10 +10,20 @@ import (
 	"github.com/jinzhu/now"
 )
 
-var demandPredictors = []string{"daily", "weekday", "temperature"}
+var demandPredictors = []string{"daily", "weekday", "temperature", "plan"}
 
-// DefaultDemandPredictor returns the demand predictor a heating charger declares via its predictor feature
+// DefaultDemandPredictor returns the demand predictor of a heating charger: "plan" if the
+// device publishes its own demand plan, otherwise the predictor declared via its predictor feature
 func DefaultDemandPredictor(charger any) string {
+	if _, ok := api.Cap[api.DemandPlanner](charger); ok {
+		return "plan"
+	}
+	return fallbackDemandPredictor(charger)
+}
+
+// fallbackDemandPredictor returns the history based predictor a heating charger declares via
+// its predictor feature. It is used where the device plan does not cover the horizon.
+func fallbackDemandPredictor(charger any) string {
 	switch {
 	case hasFeature(charger, api.DemandWeekday):
 		return "weekday"
@@ -31,7 +41,7 @@ func (lp *Loadpoint) GetDemandPredictor() string {
 	return lp.predictor
 }
 
-// SetDemandPredictor sets the demand predictor ("daily", "weekday", "temperature" or empty for the charger default), other values are ignored
+// SetDemandPredictor sets the demand predictor ("daily", "weekday", "temperature", "plan" or empty for the charger default), other values are ignored
 func (lp *Loadpoint) SetDemandPredictor(predictor string) {
 	if predictor != "" && !slices.Contains(demandPredictors, predictor) {
 		return

@@ -129,7 +129,7 @@ type Loadpoint struct {
 	minSoc                   int      // Forced charging below this soc (heating: temperature), 0=disabled
 	smartCostLimit           *float64 // always charge if consumption cost is below this value
 	solarShare               float64  // share of min charging power that must be solar in pv mode (0..1)
-	predictor                string   // heating demand predictor ("daily"/"weekday"/"temperature"), empty: charger default
+	predictor                string   // heating demand predictor ("daily"/"weekday"/"temperature"/"plan"), empty: charger default
 	smartFeedInPriorityLimit *float64 // prevent charging if feed-in cost is above this value
 	batteryBoost             int      // battery boost state
 	batteryBoostLimit        int      // battery boost soc limit (0-100, 100=disabled)
