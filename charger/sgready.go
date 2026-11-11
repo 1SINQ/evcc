@@ -61,6 +61,7 @@ func NewSgReadyFromConfig(ctx context.Context, other map[string]any) (api.Charge
 		SetMode                 plugin.Config
 		GetMode                 *plugin.Config // optional
 		SetMaxPower             *plugin.Config // optional
+		DemandPlan              *plugin.Config // optional
 		measurement.Temperature `mapstructure:",squash"`
 		measurement.Energy      `mapstructure:",squash"`
 	}{
@@ -122,6 +123,12 @@ func NewSgReadyFromConfig(ctx context.Context, other map[string]any) (api.Charge
 	}
 	implement.May(res, implement.Battery(tempG))
 	implement.May(res, implement.SocLimiter(limitTempG))
+
+	planG, err := demandPlanGetter(ctx, cc.DemandPlan)
+	if err != nil {
+		return nil, err
+	}
+	implement.May(res, implement.DemandPlanner(planG))
 
 	return res, nil
 }

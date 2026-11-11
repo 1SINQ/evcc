@@ -38,6 +38,7 @@ func NewConfigurableFromConfig(ctx context.Context, other map[string]any) (api.C
 		Soc                                 *plugin.Config
 		LimitSoc                            *plugin.Config
 		FinishTime                          *plugin.Config // deprecated, ignored
+		DemandPlan                          *plugin.Config // optional, for heating devices
 		Tos                                 bool
 		measurement.Temperature             `mapstructure:",squash"` // optional, for heating devices
 		measurement.Energy                  `mapstructure:",squash"` // optional
@@ -163,6 +164,12 @@ func NewConfigurableFromConfig(ctx context.Context, other map[string]any) (api.C
 	}
 	implement.May(c, implement.Battery(soc))
 	implement.May(c, implement.SocLimiter(limitsoc))
+
+	planG, err := demandPlanGetter(ctx, cc.DemandPlan)
+	if err != nil {
+		return nil, fmt.Errorf("demandplan: %w", err)
+	}
+	implement.May(c, implement.DemandPlanner(planG))
 
 	powerG, energyG, returnG, err := cc.Energy.Configure(ctx)
 	if err != nil {

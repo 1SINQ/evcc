@@ -50,6 +50,7 @@ func NewHeatpumpFromConfig(ctx context.Context, other map[string]any) (api.Charg
 		embed                   `mapstructure:",squash"`
 		SetMaxPower             plugin.Config
 		GetMaxPower             *plugin.Config           // optional
+		DemandPlan              *plugin.Config           // optional
 		measurement.Temperature `mapstructure:",squash"` // optional
 		measurement.Energy      `mapstructure:",squash"` // optional
 		meter.Dimmer            `mapstructure:",squash"` // optional
@@ -97,6 +98,12 @@ func NewHeatpumpFromConfig(ctx context.Context, other map[string]any) (api.Charg
 	}
 	implement.May(res, implement.Battery(tempG))
 	implement.May(res, implement.SocLimiter(limitTempG))
+
+	planG, err := demandPlanGetter(ctx, cc.DemandPlan)
+	if err != nil {
+		return nil, err
+	}
+	implement.May(res, implement.DemandPlanner(planG))
 
 	if err := cc.Dimmer.Implement(ctx, res); err != nil {
 		return nil, err
