@@ -69,4 +69,5 @@ render: |
     {{- include "mqtt" (omit . "timeout") | indent 2 }}
     topic: {{ .topic }}/wp/plan
     timeout: 45m
-    jq: '[.start_ms as $s | .slot_s as $d | .expected_w | to_entries[] | {start: (($s/1000 + .key*$d) | todate), end: (($s/1000 + (.key+1)*$d) | todate), value: .value}] | tostring'
+    # plans not refreshed within 45 min (three heartbeats) count as empty, also when re-delivered retained
+    jq: 'if (now * 1000 - (.ts_ms // 0)) > 2700000 then [] else [.start_ms as $s | .slot_s as $d | .expected_w | to_entries[] | {start: (($s/1000 + .key*$d) | todate), end: (($s/1000 + (.key+1)*$d) | todate), value: .value}] end | tostring'

@@ -88,7 +88,7 @@ func TestDemandPlanGetterNil(t *testing.T) {
 }
 
 // onekeyDemandPlan converts a onekey/wp/plan payload using the jq query of the onekey template
-func onekeyDemandPlan(t *testing.T, fixture string) (api.Rates, map[string]any) {
+func onekeyDemandPlan(t *testing.T, payload []byte) (api.Rates, map[string]any) {
 	t.Helper()
 
 	tmpl, err := templates.ByName(templates.Charger, "onekey")
@@ -111,9 +111,6 @@ func onekeyDemandPlan(t *testing.T, fixture string) (api.Rates, map[string]any) 
 	pipe, err := pipeline.New(util.NewLogger("test"), pipeline.Settings{Jq: jq})
 	require.NoError(t, err)
 
-	payload, err := os.ReadFile(fixture)
-	require.NoError(t, err)
-
 	out, err := pipe.Process(payload)
 	require.NoError(t, err)
 
@@ -123,8 +120,30 @@ func onekeyDemandPlan(t *testing.T, fixture string) (api.Rates, map[string]any) 
 	return rates, instance.DemandPlan
 }
 
+// onekeyPlanPayload reads a onekey/wp/plan fixture and sets its publish time to age before now,
+// without withTs it removes ts_ms
+func onekeyPlanPayload(t *testing.T, fixture string, age time.Duration, withTs bool) []byte {
+	t.Helper()
+
+	b, err := os.ReadFile(fixture)
+	require.NoError(t, err)
+
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(b, &payload))
+
+	delete(payload, "ts_ms")
+	if withTs {
+		payload["ts_ms"] = time.Now().Add(-age).UnixMilli()
+	}
+
+	b, err = json.Marshal(payload)
+	require.NoError(t, err)
+
+	return b
+}
+
 func TestOneKeyTemplateDemandPlan(t *testing.T) {
-	rates, cfg := onekeyDemandPlan(t, "testdata/onekey-wp-plan.json")
+	rates, cfg := onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", time.Minute, true))
 
 	assert.Equal(t, "mqtt", cfg["source"])
 	assert.Equal(t, "onekey/wp/plan", cfg["topic"])
@@ -150,7 +169,19 @@ func TestOneKeyTemplateDemandPlan(t *testing.T) {
 	}
 }
 
+// a retained plan the device no longer refreshes must not count
+func TestOneKeyTemplateDemandPlanStale(t *testing.T) {
+	rates, _ := onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", 46*time.Minute, true))
+	assert.Empty(t, rates, "stale ts_ms")
+
+	rates, _ = onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", 0, false))
+	assert.Empty(t, rates, "missing ts_ms")
+
+	rates, _ = onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan.json", 44*time.Minute, true))
+	assert.Len(t, rates, 96, "ts_ms within 45 min")
+}
+
 func TestOneKeyTemplateDemandPlanEmpty(t *testing.T) {
-	rates, _ := onekeyDemandPlan(t, "testdata/onekey-wp-plan-empty.json")
+	rates, _ := onekeyDemandPlan(t, onekeyPlanPayload(t, "testdata/onekey-wp-plan-empty.json", time.Minute, true))
 	assert.Empty(t, rates)
 }
