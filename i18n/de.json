@@ -190,20 +190,20 @@
     "circuits": {
       "addMainCircuit": "Hauptstromkreis hinzufügen",
       "addSubCircuit": "Unterstromkreis hinzufügen",
-      "notAssigned": "Nicht zugeordnet",
-      "destination": "Stromkreis {title}",
       "assignHere": "Hier zuordnen",
-      "moveHere": "Hierhin verschieben",
-      "dropAssign": "Zum Zuordnen ablegen",
-      "dropRemove": "Hier ablegen, um die Zuordnung zu entfernen.",
-      "dragHint": "Auf einen Stromkreis ziehen oder zum Auswählen antippen.",
-      "selectAssign": "Stromkreis antippen, um {title} zuzuordnen.",
-      "selectMove": "Stromkreis antippen, um {title} zu verschieben, oder den Bereich unten, um die Zuordnung zu entfernen.",
       "assignmentFailed": "Zuordnung konnte nicht gespeichert werden. Bitte erneut versuchen.",
       "description": "Stellt sicher, dass die Summe aller Ladepunkte und Heizungen, die an einen Stromkreis angeschlossen sind, die konfigurierten Leistungs- und Stromgrenzen nicht überschreitet. Stromkreise können verschachtelt werden, um eine Hierarchie aufzubauen.",
+      "destination": "Stromkreis {title}",
+      "dragHint": "Auf einen Stromkreis ziehen oder zum Auswählen antippen.",
+      "dropAssign": "Zum Zuordnen ablegen",
+      "dropRemove": "Hier ablegen, um die Zuordnung zu entfernen.",
       "legacyWarning": "Neue Stromkreis-Konfiguration verfügbar! Entferne und speichere deine Konfiguration hier, um den neuen geführten Prozess zu verwenden. Anschließend ist ein Neustart erforderlich.",
       "meterDedicated": "Zähler",
       "meterGrid": "Netz",
+      "moveHere": "Hierhin verschieben",
+      "notAssigned": "Nicht zugeordnet",
+      "selectAssign": "Stromkreis antippen, um {title} zuzuordnen.",
+      "selectMove": "Stromkreis antippen, um {title} zu verschieben, oder den Bereich unten, um die Zuordnung zu entfernen.",
       "title": "Lastmanagement",
       "usableMeters": "Verwendbare Zählerreferenzen"
     },
@@ -412,13 +412,13 @@
       "authPerformHint": "Öffnet ein neues Tab. Anschließend hier weiter machen.",
       "authPrepare": "Verbindung vorbereiten",
       "cancel": "Abbrechen",
-      "continue": "Weiter",
       "change": "Ändern",
       "clear": "Löschen",
       "close": "Schließen",
       "confirmDisable": "Dieses Gerät deaktivieren? Es wird nach dem nächsten Neustart ignoriert.",
       "confirmEnable": "Dieses Gerät wieder aktivieren?",
       "confirmSave": "Es gibt ungespeicherte Änderungen. Jetzt speichern?",
+      "continue": "Weiter",
       "copied": "Kopiert!",
       "copy": "Kopieren",
       "customHelp": "Erstelle ein benutzerdefiniertes Gerät mit evcc's Plugin-System.",
@@ -556,10 +556,6 @@
       "defaultModeKeep": "beibehalten",
       "defaultModeLabel": "Standardmodus",
       "delete": "Löschen",
-      "electricalSubtitle": "Im Zweifelsfall Elektriker fragen.",
-      "electricalTitle": "Elektrik",
-      "energyMeterHelp": "Zusätzlicher Zähler, wenn die Wallbox keinen integrierten hat.",
-      "energyMeterLabel": "Dedizierter Energiezähler",
       "demandPredictor": {
         "daily": {
           "description": "Durchschnitt der letzten Tage. Für Geräte mit täglich gleichem Verbrauch.",
@@ -585,6 +581,10 @@
           "label": "Wochentag"
         }
       },
+      "electricalSubtitle": "Im Zweifelsfall Elektriker fragen.",
+      "electricalTitle": "Elektrik",
+      "energyMeterHelp": "Zusätzlicher Zähler, wenn die Wallbox keinen integrierten hat.",
+      "energyMeterLabel": "Dedizierter Energiezähler",
       "estimateLabel": "Ladestand zwischen API-Updates interpolieren",
       "maxCurrentHelp": "Muss größer als der Mindeststrom sein.",
       "maxCurrentLabel": "Maximaler Strom",
@@ -659,11 +659,11 @@
       "vehiclesTitle": "Fahrzeuge"
     },
     "main": {
-      "addLoadpoint": "Ladepunkt oder Heizung hinzufügen",
       "addAdditional": "Zusätzlichen Zähler hinzufügen",
       "addConsumer": "Verbraucher hinzufügen",
       "addCurtailer": "Einspeisebegrenzung hinzufügen",
       "addGrid": "Netzzähler hinzufügen",
+      "addLoadpoint": "Ladepunkt oder Heizung hinzufügen",
       "addPvBattery": "PV oder Hausbatterie hinzufügen",
       "addTariffs": "Tarife hinzufügen",
       "addVehicle": "Fahrzeug hinzufügen",
@@ -763,6 +763,8 @@
         "grid": "Netzzähler hinzufügen",
         "pv": "PV-Anlage hinzufügen"
       },
+      "reuseApply": "Einstellungen übernehmen.",
+      "reuseHint": "{device} kann auch als „{target}“ verwendet werden.",
       "save": "Speichern",
       "specific": "Spezifische Integrationen",
       "template": "Hersteller",
@@ -773,8 +775,6 @@
         "consumer": "Spülmaschine, Waschmaschine, Poolpumpe, etc.",
         "pv": "Süddach, Carport, etc."
       },
-      "reuseApply": "Einstellungen übernehmen.",
-      "reuseHint": "{device} kann auch als „{target}“ verwendet werden.",
       "titleLabel": "Titel",
       "usage": {
         "aux": "Selbstregelnder Verbraucher",
@@ -1252,7 +1252,11 @@
         "returnEnergy": "Energie (rückwärts)"
       }
     },
-    "empty": "Keine Energiedaten für diesen Zeitraum verfügbar.",
+    "empty": {
+      "description": "Keine Energiedaten für diesen Zeitraum.",
+      "descriptionCurrent": "Noch keine Energiedaten. Werte erscheinen, sobald die ersten Messungen aufgezeichnet wurden.",
+      "showCurrent": "Aktuellen Zeitraum anzeigen"
+    },
     "flow": {
       "battery": "Batterie",
       "batteryCharge": "Batterieladung",
@@ -1326,6 +1330,7 @@
       "savingsTooltip": "Im Vergleich zum Bezug der verbrauchten {energy} aus dem Netz.",
       "versus": "{value} statt {reference}"
     },
+    "summary": "Zusammenfassung",
     "title": "Energie"
   },
   "footer": {
@@ -1468,6 +1473,7 @@
     "cancel": "Abbrechen",
     "download": "Download",
     "error": "Fehler",
+    "loading": "Lädt",
     "none": "keine",
     "note": "Hinweis:",
     "warning": "Warnung"
@@ -1691,18 +1697,22 @@
       "avgPrice": "⌀ Preis",
       "charged": "Geladen",
       "co2": "⌀ CO₂",
+      "consumed": "Verbraucht",
       "duration": "Ladedauer",
       "emission": "Emissionen",
       "fallbackName": "Ladepunkt",
       "finished": "Ladeende",
       "last24hEnergy": "Letzte 24h",
+      "last24hShort": "24h",
       "last7dEnergy": "Letzte 7 Tage",
+      "last7dShort": "7T",
       "phasesMismatch": "Mehr Phasen aktiv als konfiguriert. Phasenkonfiguration prüfen.",
       "power": "Leistung",
       "price": "Kosten",
       "remaining": "Restzeit",
       "remoteDisabledHard": "{source}: Deaktiviert",
       "remoteDisabledSoft": "{source}: Adaptives PV-Laden deaktiviert",
+      "session": "Ladevorgang",
       "solar": "PV",
       "todayEnergy": "Heute"
     },
@@ -1896,6 +1906,14 @@
     "logs": "Vollständiges Log ansehen",
     "modalTitle": "Meldungen"
   },
+  "offline": {
+    "configurationError": "Fehler beim Starten. Überprüfe deine Konfiguration und starte neu.",
+    "message": "Keine Verbindung zum Server.",
+    "restart": "Neustart",
+    "restartNeeded": "Erforderlich, um Änderungen zu übernehmen.",
+    "restarting": "Server ist gleich wieder verfügbar.",
+    "starting": "Server wird gestartet..."
+  },
   "onboarding": {
     "another": "Weitere hinzufügen",
     "back": "Zurück",
@@ -1965,14 +1983,6 @@
       "description": "Die wichtigsten Teile der Hausinstallation einrichten, um mit dem smarten Laden zu starten.",
       "start": "Los geht's"
     }
-  },
-  "offline": {
-    "configurationError": "Fehler beim Starten. Überprüfe deine Konfiguration und starte neu.",
-    "message": "Keine Verbindung zum Server.",
-    "restart": "Neustart",
-    "restartNeeded": "Erforderlich, um Änderungen zu übernehmen.",
-    "restarting": "Server ist gleich wieder verfügbar.",
-    "starting": "Server wird gestartet..."
   },
   "passwordModal": {
     "empty": "Passwort darf nicht leer sein",
